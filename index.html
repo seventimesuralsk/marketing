@@ -93,6 +93,19 @@
   .search-box { width: 320px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); font-family: inherit; font-size: 0.85rem; margin-bottom: 16px; outline: none; }
   .search-box:focus { border-color: var(--maroon); }
 
+  .live-feed { max-height: 340px; overflow-y: auto; }
+  .live-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.83rem; }
+  .live-row:last-child { border-bottom: none; }
+  .live-row .time { color: var(--sub); font-variant-numeric: tabular-nums; flex-shrink: 0; width: 62px; }
+  .live-row .ev { font-weight: 600; flex-shrink: 0; }
+  .live-row .det { color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .live-empty { color: var(--sub); font-size: 0.85rem; text-align: center; padding: 24px 0; }
+  .live-new { animation: liveFlash .9s ease; }
+  @keyframes liveFlash { from { background: #30d15818; } to { background: transparent; } }
+  .ai-analysis-btn { background: var(--maroon); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .ai-analysis-btn:hover { opacity: 0.9; }
+  .ai-analysis-btn:disabled { opacity: 0.5; cursor: default; }
+
   .sidebar-footer { margin-top: auto; }
   .refresh-btn {
     width: 100%; background: #fff; border: 1px solid var(--border); color: var(--text); padding: 10px;
@@ -187,14 +200,30 @@
       <div class="period-label" id="periodLabel">Сегодня</div>
 
       <div id="clientsSection" style="display:none">
-        <input type="text" class="search-box" id="clientSearch" placeholder="Поиск по имени или телефону" oninput="filterClients()">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+          <input type="text" class="search-box" id="clientSearch" placeholder="Поиск по имени или телефону" oninput="filterClients()" style="margin-bottom:0">
+          <button class="ai-analysis-btn" id="aiAnalysisBtn" onclick="runAiAnalysis()">Запустить ИИ анализ (CustDev)</button>
+        </div>
+
+        <div id="aiAnalysisBox" class="ai-box" style="display:none">
+          <h3>Разбор от ИИ — CustDev</h3>
+          <div class="txt" id="aiAnalysisText"></div>
+        </div>
+
         <div class="card">
           <table class="clients-table">
             <thead>
-              <tr><th>Имя</th><th>Телефон</th><th>Заходов</th><th>Заказов</th><th>Первый визит</th><th>Последний визит</th></tr>
+              <tr><th>Имя</th><th>Телефон</th><th>Устройство</th><th>Заходов</th><th>Заказов</th><th>Первый визит</th><th>Последний визит</th></tr>
             </thead>
             <tbody id="clientsTbody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <div id="overviewTop">
+        <div class="card" style="margin-bottom:24px">
+          <h3>Живая лента — что происходит прямо сейчас</h3>
+          <div id="liveFeed" class="live-feed"></div>
         </div>
       </div>
 
@@ -257,7 +286,7 @@
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbzpUk5OuV34BzyhJC_CUd0gS3Ky7kZV_GI2R-4dULFUC9NZpcHP8BjvHOg2yK9C-yk4/exec";
+const API = "https://script.google.com/macros/s/AKfycbxPO6HDlaJTzgzrpt2u1bNID9IXYp_7LW2sEZJJTZo82sx_kMshf61SVayNFi4kMQKRYA/exec";
 let curPeriod = "day";
 let chartDaily, chartHourly, chartWeekday;
 const PERIOD_LABELS = { day: "Сегодня", week: "Последние 7 дней", month: "Последние 30 дней", year: "Последний год" };
@@ -299,6 +328,7 @@ function setSection(s) {
   document.getElementById("mainTitle").textContent = isClients ? "Клиенты" : "Обзор";
   document.getElementById("periodLabel").style.display = isClients ? "none" : "block";
   document.getElementById("clientsSection").style.display = isClients ? "block" : "none";
+  document.getElementById("overviewTop").style.display = isClients ? "none" : "block";
   document.getElementById("loaderBox").style.display = "none";
   document.getElementById("content").style.display = "none";
   if (isClients) {
@@ -320,6 +350,7 @@ function renderClients(list) {
     <tr>
       <td class="client-name">${c.name}</td>
       <td class="client-phone">${c.phone}</td>
+      <td style="color:var(--sub)">${c.device || "—"}</td>
       <td><span class="pill pill-visits">${c.visits}</span></td>
       <td><span class="pill pill-orders">${c.orders}</span></td>
       <td>${fmtDate(c.firstSeen)}</td>
@@ -332,6 +363,26 @@ function filterClients() {
   const q = document.getElementById("clientSearch").value.trim().toLowerCase();
   if (!q) { renderClients(allClients); return; }
   renderClients(allClients.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)));
+}
+
+function runAiAnalysis() {
+  const btn = document.getElementById("aiAnalysisBtn");
+  const box = document.getElementById("aiAnalysisBox");
+  const txt = document.getElementById("aiAnalysisText");
+  btn.disabled = true; btn.textContent = "Анализируем… (может занять минуту)";
+  box.style.display = "block";
+  txt.textContent = "Собираем данные и спрашиваем ИИ…";
+  apiGet({ action: "getClientsAiAnalysis" }, function(d) {
+    btn.disabled = false; btn.textContent = "Запустить ИИ анализ (CustDev)";
+    if (d.status === "success") {
+      txt.textContent = d.analysis;
+    } else {
+      txt.textContent = "Не удалось получить анализ: " + (d.msg || "неизвестная ошибка");
+    }
+  }, function() {
+    btn.disabled = false; btn.textContent = "Запустить ИИ анализ (CustDev)";
+    txt.textContent = "Нет соединения";
+  });
 }
 
 function loadClients() {
@@ -355,6 +406,28 @@ function setPeriod(p) {
 function pollOnline() {
   apiGet({ action: "getOnlineGuests" }, function(d) {
     document.getElementById("onlineNum").textContent = d.online || 0;
+  });
+}
+
+let lastLiveTs = 0;
+function pollLiveFeed() {
+  if (curSection === "clients") return;
+  apiGet({ action: "getLiveFeed" }, function(d) {
+    const el = document.getElementById("liveFeed");
+    if (!el) return;
+    const events = d.events || [];
+    if (!events.length) { el.innerHTML = '<div class="live-empty">Пока нет событий</div>'; return; }
+    el.innerHTML = events.map(ev => {
+      const d2 = new Date(ev.date);
+      const time = d2.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const isNew = ev.date > lastLiveTs;
+      return `<div class="live-row${isNew && lastLiveTs ? ' live-new' : ''}">
+        <span class="time">${time}</span>
+        <span class="ev">${ev.event}</span>
+        <span class="det">${ev.details || ""}</span>
+      </div>`;
+    }).join("");
+    if (events.length) lastLiveTs = Math.max(lastLiveTs, events[0].date);
   });
 }
 
@@ -437,7 +510,9 @@ function loadDashboard() {
 
 function initDashboard() {
   pollOnline();
-  setInterval(pollOnline, 15000);
+  pollLiveFeed();
+  setInterval(pollOnline, 5000);
+  setInterval(pollLiveFeed, 3000);
   loadDashboard();
 }
 
