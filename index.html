@@ -98,6 +98,9 @@
 
   table.clients-table { width: 100%; border-collapse: collapse; }
   table.clients-table th { text-align: left; font-size: 0.72rem; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  table.clients-table th.sortable { cursor: pointer; user-select: none; }
+  table.clients-table th.sortable:hover { color: var(--text); }
+  .sort-ic { margin-left: 4px; font-size: 0.65rem; }
   table.clients-table td { padding: 12px 14px; font-size: 0.86rem; border-bottom: 1px solid var(--border); }
   table.clients-table tr:last-child td { border-bottom: none; }
   table.clients-table tr:hover td { background: var(--bg); }
@@ -246,7 +249,15 @@
         <div class="card">
           <table class="clients-table">
             <thead>
-              <tr><th>Имя</th><th>Телефон</th><th>Устройство</th><th>Заходов</th><th>Заказов</th><th>Первый визит</th><th>Последний визит</th></tr>
+              <tr>
+                <th class="sortable" data-key="name" onclick="sortClients('name')">Имя<span class="sort-ic" id="sortIc-name"></span></th>
+                <th>Телефон</th>
+                <th>Устройство</th>
+                <th class="sortable" data-key="visits" onclick="sortClients('visits')">Заходов<span class="sort-ic" id="sortIc-visits"></span></th>
+                <th class="sortable" data-key="orders" onclick="sortClients('orders')">Заказов<span class="sort-ic" id="sortIc-orders"></span></th>
+                <th class="sortable" data-key="firstSeen" onclick="sortClients('firstSeen')">Первый визит<span class="sort-ic" id="sortIc-firstSeen"></span></th>
+                <th class="sortable" data-key="lastSeen" onclick="sortClients('lastSeen')">Последний визит<span class="sort-ic" id="sortIc-lastSeen"></span></th>
+              </tr>
             </thead>
             <tbody id="clientsTbody"></tbody>
           </table>
@@ -400,10 +411,36 @@ function renderClients(list) {
   `).join("");
 }
 
+let sortKey = "lastSeen";
+let sortDir = -1; // -1 = убывание (по умолчанию), 1 = возрастание
+
+function sortClients(key) {
+  if (sortKey === key) {
+    sortDir = -sortDir;
+  } else {
+    sortKey = key;
+    sortDir = key === "name" ? 1 : -1; // имя по умолчанию А→Я, остальное по умолчанию больше→меньше
+  }
+  document.querySelectorAll(".sort-ic").forEach(el => el.textContent = "");
+  document.getElementById("sortIc-" + key).textContent = sortDir === 1 ? "▲" : "▼";
+  filterClients();
+}
+
+function applySorting(list) {
+  const arr = list.slice();
+  arr.sort((a, b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === "name") { av = av.toLowerCase(); bv = bv.toLowerCase(); return sortDir * av.localeCompare(bv, "ru"); }
+    return sortDir * ((av || 0) - (bv || 0));
+  });
+  return arr;
+}
+
 function filterClients() {
   const q = document.getElementById("clientSearch").value.trim().toLowerCase();
-  if (!q) { renderClients(allClients); return; }
-  renderClients(allClients.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)));
+  let list = allClients;
+  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q));
+  renderClients(applySorting(list));
 }
 
 function runAiAnalysis() {
@@ -433,7 +470,7 @@ function loadClients() {
   apiGet(params, function(d) {
     allClients = d.clients || [];
     allClients._loaded = true;
-    renderClients(allClients);
+    filterClients();
   }, function() {
     document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Нет соединения</td></tr>';
   });
@@ -623,6 +660,8 @@ function initDashboard() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  const sortIcEl = document.getElementById("sortIc-lastSeen");
+  if (sortIcEl) sortIcEl.textContent = "▼";
   if (sessionStorage.getItem("stats_authed") === "1") {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("dashScreen").style.display = "block";
