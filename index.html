@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seven Times — Статистика</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --maroon: #7a1128;
+    --maroon-light: #7a112814;
+    --bg: #f5f5f7;
+    --text: #1d1d1f;
+    --sub: #6e6e73;
+    --border: #e5e5e7;
+  }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000; --text: #f5f5f7; --sub: #98989d; --border: #2c2c2e; --maroon-light: #7a112830;
+    }
+    body { background: var(--bg); }
+    .card { background: #1c1c1e !important; }
+  }
+
+  /* ── ЛОГИН ── */
+  #loginScreen {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; gap: 18px;
+  }
+  #loginScreen .logo { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+  #loginScreen .sub { color: var(--sub); font-size: 0.85rem; margin-bottom: 8px; text-align: center; }
+  #loginScreen input {
+    width: 100%; max-width: 320px; padding: 14px 16px; border-radius: 12px;
+    border: 1.5px solid var(--border); font-size: 1rem; font-family: inherit; background: #fff; color: var(--text);
+    text-align: center; letter-spacing: 0.05em;
+  }
+  #loginScreen button {
+    width: 100%; max-width: 320px; padding: 14px; border-radius: 12px; border: none;
+    background: var(--maroon); color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  #loginErr { color: #c0392b; font-size: 0.78rem; min-height: 16px; }
+
+  /* ── ДАШБОРД ── */
+  #dashScreen { display: none; max-width: 900px; margin: 0 auto; padding: 16px 16px 60px; }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+  }
+  header.top .title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+  .online-badge {
+    display: flex; align-items: center; gap: 6px; background: #25d36614; border: 1px solid #25d36640;
+    padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #25d366; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .period-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: #fff; padding: 4px; border-radius: 12px; border: 1px solid var(--border); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .period-tabs { background: #1c1c1e; } }
+  .period-tabs button {
+    flex: 1; padding: 9px 4px; border: none; background: none; border-radius: 9px; font-size: 0.78rem;
+    font-weight: 600; color: var(--sub); cursor: pointer; font-family: inherit;
+  }
+  .period-tabs button.on { background: var(--maroon); color: #fff; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 480px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+  .card { background: #fff; border-radius: 14px; padding: 14px; border: 1px solid var(--border); margin-bottom: 14px; }
+  .kpi { text-align: center; }
+  .kpi .num { font-size: 1.5rem; font-weight: 800; }
+  .kpi .lbl { font-size: 0.65rem; color: var(--sub); margin-top: 2px; }
+  .card h3 { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; }
+  .chart-wrap { position: relative; height: 200px; }
+  .list-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .name { color: var(--text); }
+  .list-row .count { font-weight: 700; color: var(--maroon); }
+  .bar-track { background: var(--maroon-light); border-radius: 5px; height: 6px; margin-top: 4px; overflow: hidden; }
+  .bar-fill { background: var(--maroon); height: 100%; border-radius: 5px; }
+  .insight-item { font-size: 0.82rem; line-height: 1.6; padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .insight-item:last-child { border-bottom: none; }
+  .insight-item .ic { flex-shrink: 0; }
+  .ai-box { background: linear-gradient(135deg, #7a112810, #4B2E8310); border: 1px solid #7a112830; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .ai-box h3 { display: flex; align-items: center; gap: 6px; }
+  .ai-box .txt { font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; }
+  .loader-txt { text-align: center; color: var(--sub); font-size: 0.8rem; padding: 20px 0; }
+  .refresh-btn { background: none; border: none; color: var(--maroon); font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="logo">📊 Seven Times</div>
+  <div class="sub">Статистика и маркетинг-аналитика<br>Введите код администратора</div>
+  <input id="loginCode" type="text" inputmode="numeric" placeholder="Код доступа" autocomplete="off">
+  <div id="loginErr"></div>
+  <button id="loginBtn" onclick="doLogin()">Войти →</button>
+</div>
+
+<div id="dashScreen">
+  <header class="top">
+    <div class="title">📊 Статистика</div>
+    <div class="online-badge"><span class="dot"></span> <span id="onlineNum">0</span> на сайте сейчас</div>
+  </header>
+
+  <div class="period-tabs">
+    <button class="on" data-p="day" onclick="setPeriod('day')">День</button>
+    <button data-p="week" onclick="setPeriod('week')">Неделя</button>
+    <button data-p="month" onclick="setPeriod('month')">Месяц</button>
+    <button data-p="year" onclick="setPeriod('year')">Год</button>
+  </div>
+
+  <div id="loaderBox" class="loader-txt">Загрузка…</div>
+
+  <div id="content" style="display:none">
+    <div class="grid2">
+      <div class="card kpi"><div class="num" id="kpiVisits">0</div><div class="lbl">Заходов</div></div>
+      <div class="card kpi"><div class="num" id="kpiOrders">0</div><div class="lbl">Заказов</div></div>
+      <div class="card kpi"><div class="num" id="kpiConv">0%</div><div class="lbl">Конверсия</div></div>
+      <div class="card kpi"><div class="num" id="kpiCartDrop">0</div><div class="lbl">Бросили корзину</div></div>
+    </div>
+
+    <div class="ai-box">
+      <h3>🤖 Разбор от ИИ</h3>
+      <div class="txt" id="aiText">Загрузка анализа…</div>
+    </div>
+
+    <div class="card">
+      <h3>Динамика по дням</h3>
+      <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h3>По часам суток — где слабые часы</h3>
+      <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--sub);margin-top:8px" id="hourNote"></div>
+    </div>
+
+    <div class="card">
+      <h3>По дням недели</h3>
+      <div class="chart-wrap" style="height:160px"><canvas id="chartWeekday"></canvas></div>
+    </div>
+
+    <div class="grid2" style="grid-template-columns:1fr">
+      <div class="card">
+        <h3>Что чаще смотрят</h3>
+        <div id="listTopViewed"></div>
+      </div>
+      <div class="card">
+        <h3>Что чаще добавляют в корзину</h3>
+        <div id="listTopCart"></div>
+      </div>
+      <div class="card">
+        <h3>Источники трафика</h3>
+        <div id="listSources"></div>
+      </div>
+      <div class="card">
+        <h3>Устройства</h3>
+        <div id="listDevices"></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:10px">
+      <button class="refresh-btn" onclick="loadDashboard()">↻ Обновить данные</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzpUk5OuV34BzyhJC_CUd0gS3Ky7kZV_GI2R-4dULFUC9NZpcHP8BjvHOg2yK9C-yk4/exec";
+let curPeriod = "day";
+let chartDaily, chartHourly, chartWeekday;
+
+function apiGet(params, onOk, onErr) {
+  const url = API + "?" + Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
+  fetch(url).then(r => r.json()).then(onOk).catch(onErr || (() => {}));
+}
+
+function doLogin() {
+  const code = document.getElementById("loginCode").value.trim();
+  const errEl = document.getElementById("loginErr");
+  const btn = document.getElementById("loginBtn");
+  if (!code) { errEl.textContent = "Введите код"; return; }
+  btn.disabled = true; btn.textContent = "Проверяем…";
+  apiGet({ action: "adminLogin", code: code }, function(d) {
+    btn.disabled = false; btn.textContent = "Войти →";
+    if (d.status === "success") {
+      sessionStorage.setItem("stats_authed", "1");
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("dashScreen").style.display = "block";
+      initDashboard();
+    } else {
+      errEl.textContent = "Неверный код";
+    }
+  }, function() {
+    btn.disabled = false; btn.textContent = "Войти →";
+    errEl.textContent = "Нет соединения";
+  });
+}
+
+function setPeriod(p) {
+  curPeriod = p;
+  document.querySelectorAll(".period-tabs button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  loadDashboard();
+}
+
+function pollOnline() {
+  apiGet({ action: "getOnlineGuests" }, function(d) {
+    document.getElementById("onlineNum").textContent = d.online || 0;
+  });
+}
+
+function renderList(elId, arr, unit) {
+  const el = document.getElementById(elId);
+  if (!arr || !arr.length) { el.innerHTML = '<div style="color:var(--sub);font-size:0.78rem">Пока нет данных</div>'; return; }
+  const max = arr[0].count || 1;
+  el.innerHTML = arr.map(x => `
+    <div class="list-row" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;justify-content:space-between">
+        <span class="name">${x.name}</span><span class="count">${x.count}${unit||''}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(x.count/max*100)}%"></div></div>
+    </div>
+  `).join("");
+}
+
+function loadDashboard() {
+  document.getElementById("loaderBox").style.display = "block";
+  document.getElementById("loaderBox").textContent = "Загрузка…";
+  document.getElementById("content").style.display = "none";
+  apiGet({ action: "getDashboardStats", period: curPeriod }, function(d) {
+    if (d.status !== "success") {
+      document.getElementById("loaderBox").textContent = "Не удалось загрузить";
+      return;
+    }
+    document.getElementById("loaderBox").style.display = "none";
+    document.getElementById("content").style.display = "block";
+
+    document.getElementById("kpiVisits").textContent = d.totalVisits;
+    document.getElementById("kpiOrders").textContent = d.totalOrders;
+    document.getElementById("kpiConv").textContent = d.conversionPct + "%";
+    document.getElementById("kpiCartDrop").textContent = Math.max(0, d.totalCartOpens - d.totalOrders);
+
+    document.getElementById("aiText").textContent = d.aiInsightText && d.aiInsightText.trim()
+      ? d.aiInsightText
+      : (d.insights || []).join(" ");
+
+    document.getElementById("hourNote").textContent = "Самый тихий час: " + d.weakestHour + ":00 · Самый активный: " + d.busiestHour + ":00 · Самый тихий день: " + d.weakestDay;
+
+    // Daily chart
+    const dailyLabels = (d.dailySeries || []).map(x => x.date.slice(5));
+    const dailyVisits = (d.dailySeries || []).map(x => x.visits);
+    const dailyOrders = (d.dailySeries || []).map(x => x.orders);
+    if (chartDaily) chartDaily.destroy();
+    chartDaily = new Chart(document.getElementById("chartDaily"), {
+      type: "line",
+      data: {
+        labels: dailyLabels,
+        datasets: [
+          { label: "Заходы", data: dailyVisits, borderColor: "#7a1128", backgroundColor: "#7a112820", fill: true, tension: 0.3 },
+          { label: "Заказы", data: dailyOrders, borderColor: "#C77729", backgroundColor: "#C7772920", fill: true, tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } } }
+    });
+
+    // Hourly chart
+    if (chartHourly) chartHourly.destroy();
+    const hourColors = (d.hourlyVisits || []).map((v, i) => i === d.weakestHour ? "#c0392b" : (i === d.busiestHour ? "#25d366" : "#7a112860"));
+    chartHourly = new Chart(document.getElementById("chartHourly"), {
+      type: "bar",
+      data: { labels: [...Array(24).keys()].map(h => h + ":00"), datasets: [{ data: d.hourlyVisits, backgroundColor: hourColors }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // Weekday chart
+    if (chartWeekday) chartWeekday.destroy();
+    chartWeekday = new Chart(document.getElementById("chartWeekday"), {
+      type: "bar",
+      data: { labels: d.weekdayNames, datasets: [{ data: d.weekdayVisits, backgroundColor: "#7a112880" }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    renderList("listTopViewed", d.topViewed);
+    renderList("listTopCart", d.topCartAdd);
+    renderList("listSources", d.sources);
+    renderList("listDevices", d.devices);
+  }, function() {
+    document.getElementById("loaderBox").textContent = "Нет соединения";
+  });
+}
+
+function initDashboard() {
+  pollOnline();
+  setInterval(pollOnline, 15000);
+  loadDashboard();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  if (sessionStorage.getItem("stats_authed") === "1") {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("dashScreen").style.display = "block";
+    initDashboard();
+  }
+});
+</script>
+</body>
+</html>
