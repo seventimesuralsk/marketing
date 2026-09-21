@@ -67,6 +67,22 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
   .online-card .num { font-size: 1.6rem; font-weight: 700; }
   .online-card .lbl { font-size: 0.72rem; color: var(--sub); }
+  .online-branch-list { margin-top: 8px; padding-top: 8px; border-top: 1px solid #30d15825; }
+  .online-branch-row { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--sub); padding: 2px 0; }
+  .online-branch-row b { color: var(--text); }
+  .date-inp { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.8rem; outline: none; }
+  .date-inp:focus { border-color: var(--maroon); }
+  .kpi-delta { font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
+  .kpi-delta.up { color: #248a3d; }
+  .kpi-delta.down { color: #ff3b30; }
+  .kpi-delta.flat { color: var(--sub); }
+  .branch-compare-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .branch-compare-row:last-child { border-bottom: none; }
+  .branch-compare-name { width: 170px; flex-shrink: 0; font-size: 0.85rem; font-weight: 600; }
+  .branch-compare-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .branch-compare-bar-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--sub); }
+  .branch-compare-track { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .branch-compare-fill { height: 100%; border-radius: 4px; }
 
   .nav-group-title { font-size: 0.68rem; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
   .period-nav button {
@@ -170,6 +186,7 @@
       <div class="online-card">
         <div class="row"><span class="dot"></span><span class="num" id="onlineNum">0</span></div>
         <div class="lbl">гостей на сайте сейчас</div>
+        <div id="onlineByBranch" class="online-branch-list"></div>
       </div>
 
       <div>
@@ -179,6 +196,22 @@
           <button data-p="week" onclick="setPeriod('week')">Неделя</button>
           <button data-p="month" onclick="setPeriod('month')">Месяц</button>
           <button data-p="year" onclick="setPeriod('year')">Год</button>
+          <button data-p="custom" onclick="setPeriod('custom')">Свой период</button>
+        </div>
+        <div id="customDateRow" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:6px">
+          <input type="date" id="customStart" class="date-inp">
+          <input type="date" id="customEnd" class="date-inp">
+          <button class="refresh-btn" onclick="applyCustomRange()">Показать</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-group-title">Филиал</div>
+        <div class="period-nav">
+          <button class="on" data-b="" onclick="setBranch('')">Все филиалы</button>
+          <button data-b="samal" onclick="setBranch('samal')">Самал 70/3</button>
+          <button data-b="skoro" onclick="setBranch('skoro')">Скоробогатова 65/1</button>
+          <button data-b="abulhair" onclick="setBranch('abulhair')">Абулхаир Хана 177</button>
         </div>
       </div>
 
@@ -231,10 +264,15 @@
 
       <div id="content" style="display:none">
         <div class="kpi-row">
-          <div class="kpi-card"><div class="lbl">Заходов</div><div class="num" id="kpiVisits">0</div></div>
-          <div class="kpi-card"><div class="lbl">Заказов</div><div class="num" id="kpiOrders">0</div></div>
+          <div class="kpi-card"><div class="lbl">Заходов</div><div class="num" id="kpiVisits">0</div><div class="kpi-delta" id="kpiVisitsDelta"></div></div>
+          <div class="kpi-card"><div class="lbl">Заказов</div><div class="num" id="kpiOrders">0</div><div class="kpi-delta" id="kpiOrdersDelta"></div></div>
           <div class="kpi-card"><div class="lbl">Конверсия</div><div class="num" id="kpiConv">0%</div></div>
           <div class="kpi-card"><div class="lbl">Бросили корзину</div><div class="num" id="kpiCartDrop">0</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px" id="branchCompareCard">
+          <h3>Сравнение по филиалам</h3>
+          <div id="branchCompareList"></div>
         </div>
 
         <div class="ai-box">
@@ -286,10 +324,13 @@
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbxPO6HDlaJTzgzrpt2u1bNID9IXYp_7LW2sEZJJTZo82sx_kMshf61SVayNFi4kMQKRYA/exec";
+const API = "https://script.google.com/macros/s/AKfycbxBgUQaWNEnvDnaZNwo38VEHU877JbbrL2xBUKBgXODMt8o5gLhr3JFd7mIpsbRYqNk9Q/exec";
 let curPeriod = "day";
+let curBranch = "";
+let customStartVal = "", customEndVal = "";
 let chartDaily, chartHourly, chartWeekday;
-const PERIOD_LABELS = { day: "Сегодня", week: "Последние 7 дней", month: "Последние 30 дней", year: "Последний год" };
+const PERIOD_LABELS = { day: "Сегодня", week: "Последние 7 дней", month: "Последние 30 дней", year: "Последний год", custom: "Свой период" };
+const BRANCH_NAMES = { "": "Все филиалы", samal: "Самал 70/3", skoro: "Скоробогатова 65/1", abulhair: "Абулхаир Хана 177" };
 
 function apiGet(params, onOk, onErr) {
   const url = API + "?" + Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
@@ -386,33 +427,63 @@ function runAiAnalysis() {
 }
 
 function loadClients() {
-  document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:30px">Загрузка…</td></tr>';
-  apiGet({ action: "getClientsList" }, function(d) {
+  document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Загрузка…</td></tr>';
+  const params = { action: "getClientsList" };
+  if (curBranch) params.branch = curBranch;
+  apiGet(params, function(d) {
     allClients = d.clients || [];
     allClients._loaded = true;
     renderClients(allClients);
   }, function() {
-    document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:30px">Нет соединения</td></tr>';
+    document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Нет соединения</td></tr>';
   });
 }
 
 function setPeriod(p) {
   curPeriod = p;
-  document.querySelectorAll(".period-nav button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  document.querySelectorAll(".period-nav button[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  document.getElementById("customDateRow").style.display = p === "custom" ? "flex" : "none";
+  if (p === "custom") {
+    document.getElementById("periodLabel").textContent = "Выберите даты слева";
+    return; // ждём applyCustomRange
+  }
   document.getElementById("periodLabel").textContent = PERIOD_LABELS[p] || "";
   loadDashboard();
+}
+
+function applyCustomRange() {
+  const s = document.getElementById("customStart").value;
+  const en = document.getElementById("customEnd").value;
+  if (!s || !en) return;
+  customStartVal = s; customEndVal = en;
+  document.getElementById("periodLabel").textContent = s + " — " + en;
+  loadDashboard();
+}
+
+function setBranch(b) {
+  curBranch = b;
+  document.querySelectorAll(".period-nav button[data-b]").forEach(btn => btn.classList.toggle("on", btn.dataset.b === b));
+  if (curSection === "clients") loadClients(); else loadDashboard();
+  pollLiveFeed();
 }
 
 function pollOnline() {
   apiGet({ action: "getOnlineGuests" }, function(d) {
     document.getElementById("onlineNum").textContent = d.online || 0;
+    const byBranch = d.byBranch || {};
+    const el = document.getElementById("onlineByBranch");
+    const keys = Object.keys(byBranch);
+    if (!keys.length) { el.innerHTML = ""; return; }
+    el.innerHTML = keys.map(k => `<div class="online-branch-row"><span>${BRANCH_NAMES[k] || k}</span><b>${byBranch[k]}</b></div>`).join("");
   });
 }
 
 let lastLiveTs = 0;
 function pollLiveFeed() {
   if (curSection === "clients") return;
-  apiGet({ action: "getLiveFeed" }, function(d) {
+  const params = { action: "getLiveFeed" };
+  if (curBranch) params.branch = curBranch;
+  apiGet(params, function(d) {
     const el = document.getElementById("liveFeed");
     if (!el) return;
     const events = d.events || [];
@@ -445,11 +516,43 @@ function renderList(elId, arr, unit) {
   `).join("");
 }
 
+function renderDelta(elId, pct) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const cls = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+  const arrow = pct > 0 ? "▲" : pct < 0 ? "▼" : "—";
+  el.className = "kpi-delta " + cls;
+  el.textContent = arrow + " " + Math.abs(pct) + "% к прошлому периоду";
+}
+
+function renderBranchCompare(arr) {
+  const el = document.getElementById("branchCompareList");
+  const card = document.getElementById("branchCompareCard");
+  if (curBranch || !arr || arr.length < 2) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  const maxV = Math.max(...arr.map(x => x.visits), 1);
+  const maxO = Math.max(...arr.map(x => x.orders), 1);
+  el.innerHTML = arr.map(x => `
+    <div class="branch-compare-row">
+      <div class="branch-compare-name">${x.name}</div>
+      <div class="branch-compare-bars">
+        <div class="branch-compare-bar-label"><span>Заходы</span><span>${x.visits}</span></div>
+        <div class="branch-compare-track"><div class="branch-compare-fill" style="width:${Math.round(x.visits/maxV*100)}%;background:#7a1128"></div></div>
+        <div class="branch-compare-bar-label"><span>Заказы</span><span>${x.orders}</span></div>
+        <div class="branch-compare-track"><div class="branch-compare-fill" style="width:${Math.round(x.orders/maxO*100)}%;background:#C77729"></div></div>
+      </div>
+    </div>
+  `).join("");
+}
+
 function loadDashboard() {
   document.getElementById("loaderBox").style.display = "block";
   document.getElementById("loaderBox").textContent = "Загрузка…";
   document.getElementById("content").style.display = "none";
-  apiGet({ action: "getDashboardStats", period: curPeriod }, function(d) {
+  const params = { action: "getDashboardStats", period: curPeriod };
+  if (curBranch) params.branch = curBranch;
+  if (curPeriod === "custom") { params.startDate = customStartVal; params.endDate = customEndVal; }
+  apiGet(params, function(d) {
     if (d.status !== "success") {
       document.getElementById("loaderBox").textContent = "Не удалось загрузить";
       return;
@@ -461,6 +564,9 @@ function loadDashboard() {
     document.getElementById("kpiOrders").textContent = d.totalOrders;
     document.getElementById("kpiConv").textContent = d.conversionPct + "%";
     document.getElementById("kpiCartDrop").textContent = Math.max(0, d.totalCartOpens - d.totalOrders);
+    renderDelta("kpiVisitsDelta", d.visitsChangePct || 0);
+    renderDelta("kpiOrdersDelta", d.ordersChangePct || 0);
+    renderBranchCompare(d.branchComparison || []);
 
     document.getElementById("aiText").textContent = d.aiInsightText && d.aiInsightText.trim()
       ? d.aiInsightText
