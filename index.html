@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Seven Times — Статистика</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -10,167 +9,250 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --maroon: #7a1128;
-    --maroon-light: #7a112814;
+    --maroon-light: #7a112810;
     --bg: #f5f5f7;
+    --sidebar-bg: #fbfbfd;
+    --card-bg: #ffffff;
     --text: #1d1d1f;
-    --sub: #6e6e73;
-    --border: #e5e5e7;
+    --sub: #86868b;
+    --border: #e8e8ed;
+    --green: #30d158;
+    --orange: #C77729;
   }
+  html, body { min-width: 1180px; }
   body {
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text);
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     -webkit-font-smoothing: antialiased;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #000; --text: #f5f5f7; --sub: #98989d; --border: #2c2c2e; --maroon-light: #7a112830;
-    }
-    body { background: var(--bg); }
-    .card { background: #1c1c1e !important; }
   }
 
   /* ── ЛОГИН ── */
   #loginScreen {
     min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 24px; gap: 18px;
+    gap: 20px;
   }
-  #loginScreen .logo { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
-  #loginScreen .sub { color: var(--sub); font-size: 0.85rem; margin-bottom: 8px; text-align: center; }
+  #loginScreen .logo { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+  #loginScreen .sub { color: var(--sub); font-size: 0.95rem; margin-bottom: 6px; text-align: center; line-height: 1.5; }
   #loginScreen input {
-    width: 100%; max-width: 320px; padding: 14px 16px; border-radius: 12px;
-    border: 1.5px solid var(--border); font-size: 1rem; font-family: inherit; background: #fff; color: var(--text);
-    text-align: center; letter-spacing: 0.05em;
+    width: 320px; padding: 14px 18px; border-radius: 12px;
+    border: 1px solid var(--border); font-size: 1rem; font-family: inherit; background: #fff; color: var(--text);
+    text-align: center; letter-spacing: 0.04em; outline: none;
   }
+  #loginScreen input:focus { border-color: var(--maroon); }
   #loginScreen button {
-    width: 100%; max-width: 320px; padding: 14px; border-radius: 12px; border: none;
+    width: 320px; padding: 14px; border-radius: 12px; border: none;
     background: var(--maroon); color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: opacity .15s;
   }
-  #loginErr { color: #c0392b; font-size: 0.78rem; min-height: 16px; }
+  #loginScreen button:hover { opacity: 0.88; }
+  #loginErr { color: #ff3b30; font-size: 0.82rem; min-height: 16px; }
 
-  /* ── ДАШБОРД ── */
-  #dashScreen { display: none; max-width: 900px; margin: 0 auto; padding: 16px 16px 60px; }
-  header.top {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
-  }
-  header.top .title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
-  .online-badge {
-    display: flex; align-items: center; gap: 6px; background: #25d36614; border: 1px solid #25d36640;
-    padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
-  }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: #25d366; animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  /* ── ЛЭЙАУТ ── */
+  #dashScreen { display: none; }
+  .layout { display: flex; min-height: 100vh; }
 
-  .period-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: #fff; padding: 4px; border-radius: 12px; border: 1px solid var(--border); }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .period-tabs { background: #1c1c1e; } }
-  .period-tabs button {
-    flex: 1; padding: 9px 4px; border: none; background: none; border-radius: 9px; font-size: 0.78rem;
-    font-weight: 600; color: var(--sub); cursor: pointer; font-family: inherit;
+  .sidebar {
+    width: 260px; flex-shrink: 0; background: var(--sidebar-bg); border-right: 1px solid var(--border);
+    padding: 28px 20px; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh;
   }
-  .period-tabs button.on { background: var(--maroon); color: #fff; }
+  .sidebar .brand { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+  .sidebar .brand .badge { font-size: 0.6rem; font-weight: 600; color: var(--sub); background: var(--border); padding: 2px 7px; border-radius: 6px; }
 
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  @media (max-width: 480px) { .grid2 { grid-template-columns: 1fr 1fr; } }
-  .card { background: #fff; border-radius: 14px; padding: 14px; border: 1px solid var(--border); margin-bottom: 14px; }
-  .kpi { text-align: center; }
-  .kpi .num { font-size: 1.5rem; font-weight: 800; }
-  .kpi .lbl { font-size: 0.65rem; color: var(--sub); margin-top: 2px; }
-  .card h3 { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; }
-  .chart-wrap { position: relative; height: 200px; }
-  .list-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .online-card {
+    background: #30d15812; border: 1px solid #30d15830; border-radius: 14px; padding: 14px 16px;
+  }
+  .online-card .row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .online-card .num { font-size: 1.6rem; font-weight: 700; }
+  .online-card .lbl { font-size: 0.72rem; color: var(--sub); }
+
+  .nav-group-title { font-size: 0.68rem; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .period-nav button {
+    display: block; width: 100%; text-align: left; padding: 10px 12px; border: none; background: none;
+    border-radius: 9px; font-size: 0.88rem; font-weight: 500; color: var(--text); cursor: pointer; font-family: inherit;
+    margin-bottom: 2px; transition: background .12s;
+  }
+  .period-nav button:hover { background: var(--border); }
+  .period-nav button.on { background: var(--maroon); color: #fff; font-weight: 600; }
+  .section-nav button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: none; background: none; border-radius: 9px; font-size: 0.88rem; font-weight: 500; color: var(--text); cursor: pointer; font-family: inherit; margin-bottom: 2px; transition: background .12s; }
+  .section-nav button:hover { background: var(--border); }
+  .section-nav button.on { background: var(--maroon); color: #fff; font-weight: 600; }
+
+  table.clients-table { width: 100%; border-collapse: collapse; }
+  table.clients-table th { text-align: left; font-size: 0.72rem; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  table.clients-table td { padding: 12px 14px; font-size: 0.86rem; border-bottom: 1px solid var(--border); }
+  table.clients-table tr:last-child td { border-bottom: none; }
+  table.clients-table tr:hover td { background: var(--bg); }
+  .client-name { font-weight: 600; }
+  .client-phone { color: var(--sub); font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
+  .pill-orders { background: #30d15818; color: #248a3d; }
+  .pill-visits { background: #7a112814; color: var(--maroon); }
+  .search-box { width: 320px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); font-family: inherit; font-size: 0.85rem; margin-bottom: 16px; outline: none; }
+  .search-box:focus { border-color: var(--maroon); }
+
+  .sidebar-footer { margin-top: auto; }
+  .refresh-btn {
+    width: 100%; background: #fff; border: 1px solid var(--border); color: var(--text); padding: 10px;
+    border-radius: 10px; font-size: 0.82rem; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .refresh-btn:hover { background: var(--border); }
+
+  main { flex: 1; padding: 40px 48px; max-width: 1400px; }
+  main h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 6px; }
+  main .period-label { color: var(--sub); font-size: 0.9rem; margin-bottom: 32px; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--card-bg); border-radius: 18px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .kpi-card .lbl { font-size: 0.78rem; color: var(--sub); font-weight: 500; margin-bottom: 8px; }
+  .kpi-card .num { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; }
+
+  .ai-box {
+    background: linear-gradient(135deg, #7a112810, #4B2E8310);
+    border: 1px solid #7a112825; border-radius: 18px; padding: 24px 26px; margin-bottom: 24px;
+  }
+  .ai-box h3 { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+  .ai-box .txt { font-size: 0.92rem; line-height: 1.75; white-space: pre-wrap; color: var(--text); }
+
+  .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-4col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+
+  .card {
+    background: var(--card-bg); border-radius: 18px; padding: 22px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.01em; }
+  .chart-wrap { position: relative; height: 240px; }
+
+  .list-row { padding: 9px 0; border-bottom: 1px solid var(--border); }
   .list-row:last-child { border-bottom: none; }
-  .list-row .name { color: var(--text); }
+  .list-row-top { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+  .list-row .name { color: var(--text); font-weight: 500; }
   .list-row .count { font-weight: 700; color: var(--maroon); }
-  .bar-track { background: var(--maroon-light); border-radius: 5px; height: 6px; margin-top: 4px; overflow: hidden; }
+  .bar-track { background: var(--maroon-light); border-radius: 5px; height: 6px; overflow: hidden; }
   .bar-fill { background: var(--maroon); height: 100%; border-radius: 5px; }
-  .insight-item { font-size: 0.82rem; line-height: 1.6; padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
-  .insight-item:last-child { border-bottom: none; }
-  .insight-item .ic { flex-shrink: 0; }
-  .ai-box { background: linear-gradient(135deg, #7a112810, #4B2E8310); border: 1px solid #7a112830; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
-  .ai-box h3 { display: flex; align-items: center; gap: 6px; }
-  .ai-box .txt { font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; }
-  .loader-txt { text-align: center; color: var(--sub); font-size: 0.8rem; padding: 20px 0; }
-  .refresh-btn { background: none; border: none; color: var(--maroon); font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  .loader-txt { text-align: center; color: var(--sub); font-size: 0.9rem; padding: 80px 0; }
 </style>
 </head>
 <body>
 
 <div id="loginScreen">
-  <div class="logo">📊 Seven Times</div>
+  <div class="logo">Seven Times</div>
   <div class="sub">Статистика и маркетинг-аналитика<br>Введите код администратора</div>
   <input id="loginCode" type="text" inputmode="numeric" placeholder="Код доступа" autocomplete="off">
   <div id="loginErr"></div>
-  <button id="loginBtn" onclick="doLogin()">Войти →</button>
+  <button id="loginBtn" onclick="doLogin()">Войти</button>
 </div>
 
 <div id="dashScreen">
-  <header class="top">
-    <div class="title">📊 Статистика</div>
-    <div class="online-badge"><span class="dot"></span> <span id="onlineNum">0</span> на сайте сейчас</div>
-  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">Seven Times <span class="badge">STATS</span></div>
 
-  <div class="period-tabs">
-    <button class="on" data-p="day" onclick="setPeriod('day')">День</button>
-    <button data-p="week" onclick="setPeriod('week')">Неделя</button>
-    <button data-p="month" onclick="setPeriod('month')">Месяц</button>
-    <button data-p="year" onclick="setPeriod('year')">Год</button>
-  </div>
-
-  <div id="loaderBox" class="loader-txt">Загрузка…</div>
-
-  <div id="content" style="display:none">
-    <div class="grid2">
-      <div class="card kpi"><div class="num" id="kpiVisits">0</div><div class="lbl">Заходов</div></div>
-      <div class="card kpi"><div class="num" id="kpiOrders">0</div><div class="lbl">Заказов</div></div>
-      <div class="card kpi"><div class="num" id="kpiConv">0%</div><div class="lbl">Конверсия</div></div>
-      <div class="card kpi"><div class="num" id="kpiCartDrop">0</div><div class="lbl">Бросили корзину</div></div>
-    </div>
-
-    <div class="ai-box">
-      <h3>🤖 Разбор от ИИ</h3>
-      <div class="txt" id="aiText">Загрузка анализа…</div>
-    </div>
-
-    <div class="card">
-      <h3>Динамика по дням</h3>
-      <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
-    </div>
-
-    <div class="card">
-      <h3>По часам суток — где слабые часы</h3>
-      <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
-      <div style="font-size:0.72rem;color:var(--sub);margin-top:8px" id="hourNote"></div>
-    </div>
-
-    <div class="card">
-      <h3>По дням недели</h3>
-      <div class="chart-wrap" style="height:160px"><canvas id="chartWeekday"></canvas></div>
-    </div>
-
-    <div class="grid2" style="grid-template-columns:1fr">
-      <div class="card">
-        <h3>Что чаще смотрят</h3>
-        <div id="listTopViewed"></div>
+      <div class="online-card">
+        <div class="row"><span class="dot"></span><span class="num" id="onlineNum">0</span></div>
+        <div class="lbl">гостей на сайте сейчас</div>
       </div>
-      <div class="card">
-        <h3>Что чаще добавляют в корзину</h3>
-        <div id="listTopCart"></div>
-      </div>
-      <div class="card">
-        <h3>Источники трафика</h3>
-        <div id="listSources"></div>
-      </div>
-      <div class="card">
-        <h3>Устройства</h3>
-        <div id="listDevices"></div>
-      </div>
-    </div>
 
-    <div style="text-align:center;margin-top:10px">
-      <button class="refresh-btn" onclick="loadDashboard()">↻ Обновить данные</button>
-    </div>
+      <div>
+        <div class="nav-group-title">Период</div>
+        <div class="period-nav">
+          <button class="on" data-p="day" onclick="setPeriod('day')">Сегодня</button>
+          <button data-p="week" onclick="setPeriod('week')">Неделя</button>
+          <button data-p="month" onclick="setPeriod('month')">Месяц</button>
+          <button data-p="year" onclick="setPeriod('year')">Год</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-group-title">Раздел</div>
+        <div class="section-nav">
+          <button class="on" data-s="overview" onclick="setSection('overview')">Обзор</button>
+          <button data-s="clients" onclick="setSection('clients')">Клиенты</button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="refresh-btn" onclick="loadDashboard()">Обновить данные</button>
+      </div>
+    </aside>
+
+    <main>
+      <h1 id="mainTitle">Обзор</h1>
+      <div class="period-label" id="periodLabel">Сегодня</div>
+
+      <div id="clientsSection" style="display:none">
+        <input type="text" class="search-box" id="clientSearch" placeholder="Поиск по имени или телефону" oninput="filterClients()">
+        <div class="card">
+          <table class="clients-table">
+            <thead>
+              <tr><th>Имя</th><th>Телефон</th><th>Заходов</th><th>Заказов</th><th>Первый визит</th><th>Последний визит</th></tr>
+            </thead>
+            <tbody id="clientsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="loaderBox" class="loader-txt">Загрузка…</div>
+
+      <div id="content" style="display:none">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="lbl">Заходов</div><div class="num" id="kpiVisits">0</div></div>
+          <div class="kpi-card"><div class="lbl">Заказов</div><div class="num" id="kpiOrders">0</div></div>
+          <div class="kpi-card"><div class="lbl">Конверсия</div><div class="num" id="kpiConv">0%</div></div>
+          <div class="kpi-card"><div class="lbl">Бросили корзину</div><div class="num" id="kpiCartDrop">0</div></div>
+        </div>
+
+        <div class="ai-box">
+          <h3>Разбор от ИИ</h3>
+          <div class="txt" id="aiText">Загрузка анализа…</div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h3>Динамика по дням</h3>
+            <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>По часам суток — где слабые часы</h3>
+            <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+            <div style="font-size:0.78rem;color:var(--sub);margin-top:10px" id="hourNote"></div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h3>По дням недели</h3>
+            <div class="chart-wrap" style="height:200px"><canvas id="chartWeekday"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Источники трафика</h3>
+            <div id="listSources"></div>
+          </div>
+        </div>
+
+        <div class="grid-4col">
+          <div class="card">
+            <h3>Что чаще смотрят</h3>
+            <div id="listTopViewed"></div>
+          </div>
+          <div class="card">
+            <h3>Что чаще добавляют в корзину</h3>
+            <div id="listTopCart"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:40px">
+          <h3>Устройства</h3>
+          <div id="listDevices"></div>
+        </div>
+      </div>
+    </main>
   </div>
 </div>
 
@@ -178,6 +260,7 @@
 const API = "https://script.google.com/macros/s/AKfycbzpUk5OuV34BzyhJC_CUd0gS3Ky7kZV_GI2R-4dULFUC9NZpcHP8BjvHOg2yK9C-yk4/exec";
 let curPeriod = "day";
 let chartDaily, chartHourly, chartWeekday;
+const PERIOD_LABELS = { day: "Сегодня", week: "Последние 7 дней", month: "Последние 30 дней", year: "Последний год" };
 
 function apiGet(params, onOk, onErr) {
   const url = API + "?" + Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
@@ -191,7 +274,7 @@ function doLogin() {
   if (!code) { errEl.textContent = "Введите код"; return; }
   btn.disabled = true; btn.textContent = "Проверяем…";
   apiGet({ action: "adminLogin", code: code }, function(d) {
-    btn.disabled = false; btn.textContent = "Войти →";
+    btn.disabled = false; btn.textContent = "Войти";
     if (d.status === "success") {
       sessionStorage.setItem("stats_authed", "1");
       document.getElementById("loginScreen").style.display = "none";
@@ -201,14 +284,71 @@ function doLogin() {
       errEl.textContent = "Неверный код";
     }
   }, function() {
-    btn.disabled = false; btn.textContent = "Войти →";
+    btn.disabled = false; btn.textContent = "Войти";
     errEl.textContent = "Нет соединения";
+  });
+}
+
+let curSection = "overview";
+let allClients = [];
+
+function setSection(s) {
+  curSection = s;
+  document.querySelectorAll(".section-nav button").forEach(b => b.classList.toggle("on", b.dataset.s === s));
+  const isClients = s === "clients";
+  document.getElementById("mainTitle").textContent = isClients ? "Клиенты" : "Обзор";
+  document.getElementById("periodLabel").style.display = isClients ? "none" : "block";
+  document.getElementById("clientsSection").style.display = isClients ? "block" : "none";
+  document.getElementById("loaderBox").style.display = "none";
+  document.getElementById("content").style.display = "none";
+  if (isClients) {
+    loadClients();
+  } else {
+    loadDashboard();
+  }
+}
+
+function renderClients(list) {
+  const tbody = document.getElementById("clientsTbody");
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:30px">Пока нет клиентов</td></tr>'; return; }
+  function fmtDate(ts) {
+    if (!ts) return "—";
+    const d = new Date(ts);
+    return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+  tbody.innerHTML = list.map(c => `
+    <tr>
+      <td class="client-name">${c.name}</td>
+      <td class="client-phone">${c.phone}</td>
+      <td><span class="pill pill-visits">${c.visits}</span></td>
+      <td><span class="pill pill-orders">${c.orders}</span></td>
+      <td>${fmtDate(c.firstSeen)}</td>
+      <td>${fmtDate(c.lastSeen)}</td>
+    </tr>
+  `).join("");
+}
+
+function filterClients() {
+  const q = document.getElementById("clientSearch").value.trim().toLowerCase();
+  if (!q) { renderClients(allClients); return; }
+  renderClients(allClients.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)));
+}
+
+function loadClients() {
+  document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:30px">Загрузка…</td></tr>';
+  apiGet({ action: "getClientsList" }, function(d) {
+    allClients = d.clients || [];
+    allClients._loaded = true;
+    renderClients(allClients);
+  }, function() {
+    document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:30px">Нет соединения</td></tr>';
   });
 }
 
 function setPeriod(p) {
   curPeriod = p;
-  document.querySelectorAll(".period-tabs button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  document.querySelectorAll(".period-nav button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  document.getElementById("periodLabel").textContent = PERIOD_LABELS[p] || "";
   loadDashboard();
 }
 
@@ -220,11 +360,11 @@ function pollOnline() {
 
 function renderList(elId, arr, unit) {
   const el = document.getElementById(elId);
-  if (!arr || !arr.length) { el.innerHTML = '<div style="color:var(--sub);font-size:0.78rem">Пока нет данных</div>'; return; }
+  if (!arr || !arr.length) { el.innerHTML = '<div style="color:var(--sub);font-size:0.85rem">Пока нет данных</div>'; return; }
   const max = arr[0].count || 1;
   el.innerHTML = arr.map(x => `
-    <div class="list-row" style="flex-direction:column;align-items:stretch">
-      <div style="display:flex;justify-content:space-between">
+    <div class="list-row">
+      <div class="list-row-top">
         <span class="name">${x.name}</span><span class="count">${x.count}${unit||''}</span>
       </div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(x.count/max*100)}%"></div></div>
@@ -255,7 +395,6 @@ function loadDashboard() {
 
     document.getElementById("hourNote").textContent = "Самый тихий час: " + d.weakestHour + ":00 · Самый активный: " + d.busiestHour + ":00 · Самый тихий день: " + d.weakestDay;
 
-    // Daily chart
     const dailyLabels = (d.dailySeries || []).map(x => x.date.slice(5));
     const dailyVisits = (d.dailySeries || []).map(x => x.visits);
     const dailyOrders = (d.dailySeries || []).map(x => x.orders);
@@ -265,28 +404,26 @@ function loadDashboard() {
       data: {
         labels: dailyLabels,
         datasets: [
-          { label: "Заходы", data: dailyVisits, borderColor: "#7a1128", backgroundColor: "#7a112820", fill: true, tension: 0.3 },
-          { label: "Заказы", data: dailyOrders, borderColor: "#C77729", backgroundColor: "#C7772920", fill: true, tension: 0.3 }
+          { label: "Заходы", data: dailyVisits, borderColor: "#7a1128", backgroundColor: "#7a112820", fill: true, tension: 0.35, pointRadius: 2 },
+          { label: "Заказы", data: dailyOrders, borderColor: "#C77729", backgroundColor: "#C7772920", fill: true, tension: 0.35, pointRadius: 2 }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: "#f0f0f2" } } } }
     });
 
-    // Hourly chart
     if (chartHourly) chartHourly.destroy();
-    const hourColors = (d.hourlyVisits || []).map((v, i) => i === d.weakestHour ? "#c0392b" : (i === d.busiestHour ? "#25d366" : "#7a112860"));
+    const hourColors = (d.hourlyVisits || []).map((v, i) => i === d.weakestHour ? "#ff3b30" : (i === d.busiestHour ? "#30d158" : "#7a112855"));
     chartHourly = new Chart(document.getElementById("chartHourly"), {
       type: "bar",
-      data: { labels: [...Array(24).keys()].map(h => h + ":00"), datasets: [{ data: d.hourlyVisits, backgroundColor: hourColors }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      data: { labels: [...Array(24).keys()].map(h => h + ":00"), datasets: [{ data: d.hourlyVisits, backgroundColor: hourColors, borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: "#f0f0f2" } } } }
     });
 
-    // Weekday chart
     if (chartWeekday) chartWeekday.destroy();
     chartWeekday = new Chart(document.getElementById("chartWeekday"), {
       type: "bar",
-      data: { labels: d.weekdayNames, datasets: [{ data: d.weekdayVisits, backgroundColor: "#7a112880" }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      data: { labels: d.weekdayNames, datasets: [{ data: d.weekdayVisits, backgroundColor: "#7a112880", borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: "#f0f0f2" } } } }
     });
 
     renderList("listTopViewed", d.topViewed);
