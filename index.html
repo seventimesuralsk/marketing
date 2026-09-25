@@ -2,9 +2,11 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Seven Times — Статистика</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -19,7 +21,7 @@
     --green: #30d158;
     --orange: #C77729;
   }
-  html, body { min-width: 1180px; }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
     background: var(--bg);
@@ -68,6 +70,7 @@
   .online-card .num { font-size: 1.6rem; font-weight: 700; }
   .online-card .lbl { font-size: 0.72rem; color: var(--sub); }
   .online-branch-list { margin-top: 8px; padding-top: 8px; border-top: 1px solid #30d15825; }
+  .online-branch-list:empty { display: none; }
   .online-branch-row { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--sub); padding: 2px 0; }
   .online-branch-row b { color: var(--text); }
   .date-inp { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.8rem; outline: none; }
@@ -169,14 +172,34 @@
   .bar-fill { background: var(--maroon); height: 100%; border-radius: 5px; }
 
   .loader-txt { text-align: center; color: var(--sub); font-size: 0.9rem; padding: 80px 0; }
-</style>
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); padding: 18px 16px; gap: 18px; }
+    .period-nav, .section-nav { display: flex; flex-wrap: wrap; gap: 6px; }
+    .period-nav button, .section-nav button { width: auto; margin: 0; padding: 8px 12px; }
+    main { padding: 20px 16px; }
+    .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .kpi-card { padding: 16px; }
+    .kpi-card .num { font-size: 1.6rem; }
+    .grid-2col, .grid-4col { grid-template-columns: minmax(0, 1fr); }
+    .branch-compare-name { width: 110px; }
+    .search-box { width: 100%; }
+    .card { overflow-x: auto; }
+    #loginScreen input, #loginScreen button { width: 88vw; max-width: 320px; }
+    .live-row { flex-wrap: wrap; row-gap: 2px; }
+    .live-row .ev { flex-shrink: 1; min-width: 0; }
+    .live-row .det { flex-basis: 100%; white-space: normal; }
+    .clients-toolbar { flex-wrap: wrap; }
+    .ai-analysis-btn { white-space: normal; }
+    main { min-width: 0; }
+  }</style>
 </head>
 <body>
 
 <div id="loginScreen">
   <div class="logo">Seven Times</div>
   <div class="sub">Статистика и маркетинг-аналитика<br>Введите код администратора</div>
-  <input id="loginCode" type="text" inputmode="numeric" placeholder="Код доступа" autocomplete="off">
+  <input id="loginCode" type="password" inputmode="numeric" placeholder="Код доступа" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
   <div id="loginErr"></div>
   <button id="loginBtn" onclick="doLogin()">Войти</button>
 </div>
@@ -201,7 +224,7 @@
           <button data-p="year" onclick="setPeriod('year')">Год</button>
           <button data-p="custom" onclick="setPeriod('custom')">Свой период</button>
         </div>
-        <div id="customDateRow" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:6px">
+        <div id="customDateRow" style="display:none;margin-top:8px;flex-direction:column;gap:6px">
           <input type="date" id="customStart" class="date-inp">
           <input type="date" id="customEnd" class="date-inp">
           <button class="refresh-btn" onclick="applyCustomRange()">Показать</button>
@@ -236,7 +259,7 @@
       <div class="period-label" id="periodLabel">Сегодня</div>
 
       <div id="clientsSection" style="display:none">
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+        <div class="clients-toolbar" style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
           <input type="text" class="search-box" id="clientSearch" placeholder="Поиск по имени или телефону" oninput="filterClients()" style="margin-bottom:0">
           <button class="ai-analysis-btn" id="aiAnalysisBtn" onclick="runAiAnalysis()">Запустить ИИ анализ (CustDev)</button>
         </div>
@@ -288,7 +311,7 @@
 
         <div class="ai-box">
           <h3>Разбор от ИИ<button class="ai-analysis-btn" id="overviewAiBtn" onclick="runOverviewAiAnalysis()" style="margin-left:auto;padding:6px 14px;font-size:0.76rem">Спросить ИИ</button></h3>
-          <div class="txt" id="aiText">Коротко по формулам ниже. Нажми «Спросить ИИ» для полного разбора от Claude.</div>
+          <div class="txt" id="aiText">Коротко по формулам ниже. Нажмите «Спросить ИИ» для полного разбора.</div>
         </div>
 
         <div class="grid-2col">
@@ -335,7 +358,11 @@
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbxz4kWvKKHmMJ8R1cSZPn9rh6U089QMyz0P_pqS-1saO6V_WYJJgprCklH8v6vjt6D1Dg/exec";
+const API = "https://script.google.com/macros/s/AKfycbxQXdH_4zf-DcuFxdB6lpHvcwkzfyhUw2f0nLh98FcUd7Z6i8AM-84ZjotY4Y7oQcEOlA/exec";
+// всё, что приходит из таблицы (имена гостей, события), вставляем только экранированным:
+// иначе гость мог записать в имя код, который выполнится в статистике
+function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+let adminCode = sessionStorage.getItem("stats_code") || "";
 let curPeriod = "day";
 let lastDashboardData = null;
 let curBranch = "";
@@ -344,9 +371,25 @@ let chartDaily, chartHourly, chartWeekday;
 const PERIOD_LABELS = { day: "Сегодня", week: "Последние 7 дней", month: "Последние 30 дней", year: "Последний год", custom: "Свой период" };
 const BRANCH_NAMES = { "": "Все филиалы", samal: "Самал 70/3", skoro: "Скоробогатова 65/1", abulhair: "Абулхаир Хана 177" };
 
-function apiGet(params, onOk, onErr) {
+function apiGet(params, onOk, onErr, timeoutMs) {
+  if (adminCode && !params.code) params = Object.assign({ code: adminCode }, params);
   const url = API + "?" + Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
-  fetch(url).then(r => r.json()).then(onOk).catch(onErr || (() => {}));
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), timeoutMs || 25000);
+  fetch(url, { signal: ctl.signal }).then(r => r.json()).then(d => {
+    clearTimeout(t);
+    // код сменили или он неверный — возвращаем на вход
+    if (d && d.status === "error" && /Нет доступа/.test(d.msg || "") && params.action !== "adminLogin") return logout("Код устарел — войдите заново");
+    onOk(d);
+  }).catch(() => { clearTimeout(t); (onErr || (() => {}))(); });
+}
+let pollTimers = [];
+function logout(msg) {
+  sessionStorage.removeItem("stats_code"); sessionStorage.removeItem("stats_authed"); adminCode = "";
+  pollTimers.forEach(clearInterval); pollTimers = [];
+  document.getElementById("dashScreen").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("loginErr").textContent = msg || "";
 }
 
 function doLogin() {
@@ -358,12 +401,13 @@ function doLogin() {
   apiGet({ action: "adminLogin", code: code }, function(d) {
     btn.disabled = false; btn.textContent = "Войти";
     if (d.status === "success") {
-      sessionStorage.setItem("stats_authed", "1");
+      adminCode = code;
+      sessionStorage.setItem("stats_code", code);
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("dashScreen").style.display = "block";
       initDashboard();
     } else {
-      errEl.textContent = "Неверный код";
+      errEl.textContent = d.msg || "Неверный код";
     }
   }, function() {
     btn.disabled = false; btn.textContent = "Войти";
@@ -393,7 +437,7 @@ function setSection(s) {
 
 function renderClients(list) {
   const tbody = document.getElementById("clientsTbody");
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:30px">Пока нет клиентов</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Пока нет клиентов</td></tr>'; return; }
   function fmtDate(ts) {
     if (!ts) return "—";
     const d = new Date(ts);
@@ -401,11 +445,11 @@ function renderClients(list) {
   }
   tbody.innerHTML = list.map(c => `
     <tr>
-      <td class="client-name">${c.name}</td>
-      <td class="client-phone">${c.phone}</td>
-      <td style="color:var(--sub)">${c.device || "—"}</td>
-      <td><span class="pill pill-visits">${c.visits}</span></td>
-      <td><span class="pill pill-orders">${c.orders}</span></td>
+      <td class="client-name">${esc(c.name)}</td>
+      <td class="client-phone">${esc(c.phone)}</td>
+      <td style="color:var(--sub)">${esc(c.device || "—")}</td>
+      <td><span class="pill pill-visits">${esc(c.visits)}</span></td>
+      <td><span class="pill pill-orders">${esc(c.orders)}</span></td>
       <td>${fmtDate(c.firstSeen)}</td>
       <td>${fmtDate(c.lastSeen)}</td>
     </tr>
@@ -431,7 +475,7 @@ function applySorting(list) {
   const arr = list.slice();
   arr.sort((a, b) => {
     let av = a[sortKey], bv = b[sortKey];
-    if (sortKey === "name") { av = av.toLowerCase(); bv = bv.toLowerCase(); return sortDir * av.localeCompare(bv, "ru"); }
+    if (sortKey === "name") { av = String(av || "").toLowerCase(); bv = String(bv || "").toLowerCase(); return sortDir * av.localeCompare(bv, "ru"); }
     return sortDir * ((av || 0) - (bv || 0));
   });
   return arr;
@@ -440,7 +484,7 @@ function applySorting(list) {
 function filterClients() {
   const q = document.getElementById("clientSearch").value.trim().toLowerCase();
   let list = allClients;
-  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q));
+  if (q) list = list.filter(c => String(c.name || "").toLowerCase().includes(q) || String(c.phone || "").toLowerCase().includes(q));
   renderClients(applySorting(list));
 }
 
@@ -462,7 +506,7 @@ function runOverviewAiAnalysis() {
   }, function() {
     btn.disabled = false; btn.textContent = "Спросить ИИ";
     txt.textContent = "Нет соединения";
-  });
+  }, 90000);
 }
 
 function runAiAnalysis() {
@@ -482,14 +526,16 @@ function runAiAnalysis() {
   }, function() {
     btn.disabled = false; btn.textContent = "Запустить ИИ анализ (CustDev)";
     txt.textContent = "Нет соединения";
-  });
+  }, 120000);
 }
 
 function loadClients() {
   document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Загрузка…</td></tr>';
   const params = { action: "getClientsList" };
   if (curBranch) params.branch = curBranch;
+  const reqBranch = curBranch;
   apiGet(params, function(d) {
+    if (curSection !== "clients" || reqBranch !== curBranch) return;
     allClients = d.clients || [];
     allClients._loaded = true;
     filterClients();
@@ -520,32 +566,42 @@ function applyCustomRange() {
 }
 
 function setBranch(b) {
-  curBranch = b;
+  curBranch = b; liveSig = "";
   document.querySelectorAll(".period-nav button[data-b]").forEach(btn => btn.classList.toggle("on", btn.dataset.b === b));
   if (curSection === "clients") loadClients(); else loadDashboard();
   pollLiveFeed();
 }
 
+let onlineBusy = false;
 function pollOnline() {
+  if (onlineBusy || document.hidden) return;
+  onlineBusy = true;
   apiGet({ action: "getOnlineGuests" }, function(d) {
+    onlineBusy = false;
     document.getElementById("onlineNum").textContent = d.online || 0;
     const byBranch = d.byBranch || {};
     const el = document.getElementById("onlineByBranch");
     const keys = Object.keys(byBranch);
     if (!keys.length) { el.innerHTML = ""; return; }
-    el.innerHTML = keys.map(k => `<div class="online-branch-row"><span>${BRANCH_NAMES[k] || k}</span><b>${byBranch[k]}</b></div>`).join("");
-  });
+    el.innerHTML = keys.map(k => `<div class="online-branch-row"><span>${esc(BRANCH_NAMES[k] || k)}</span><b>${esc(byBranch[k])}</b></div>`).join("");
+  }, function() { onlineBusy = false; });
 }
 
-let lastLiveTs = 0;
+let lastLiveTs = 0, liveBusy = false, liveSig = "";
 function pollLiveFeed() {
-  if (curSection === "clients") return;
+  if (curSection === "clients" || liveBusy || document.hidden) return;
+  liveBusy = true;
   const params = { action: "getLiveFeed" };
+  const reqBranch = curBranch;
   if (curBranch) params.branch = curBranch;
   apiGet(params, function(d) {
+    liveBusy = false;
     const el = document.getElementById("liveFeed");
-    if (!el) return;
+    if (!el || reqBranch !== curBranch) return;
     const events = d.events || [];
+    const sig = reqBranch + "|" + events.length + "|" + (events[0] ? events[0].date : 0);
+    if (sig === liveSig) return; // ничего нового — не перерисовываем
+    liveSig = sig;
     if (!events.length) { el.innerHTML = '<div class="live-empty">Пока нет событий</div>'; return; }
     el.innerHTML = events.map(ev => {
       const d2 = new Date(ev.date);
@@ -553,12 +609,12 @@ function pollLiveFeed() {
       const isNew = ev.date > lastLiveTs;
       return `<div class="live-row${isNew && lastLiveTs ? ' live-new' : ''}">
         <span class="time">${time}</span>
-        <span class="ev">${ev.event}</span>
-        <span class="det">${ev.details || ""}</span>
+        <span class="ev">${esc(ev.event)}</span>
+        <span class="det">${esc(ev.details || "")}</span>
       </div>`;
     }).join("");
     if (events.length) lastLiveTs = Math.max(lastLiveTs, events[0].date);
-  });
+  }, function() { liveBusy = false; });
 }
 
 function renderList(elId, arr, unit) {
@@ -568,7 +624,7 @@ function renderList(elId, arr, unit) {
   el.innerHTML = arr.map(x => `
     <div class="list-row">
       <div class="list-row-top">
-        <span class="name">${x.name}</span><span class="count">${x.count}${unit||''}</span>
+        <span class="name">${esc(x.name)}</span><span class="count">${esc(x.count)}${unit||''}</span>
       </div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(x.count/max*100)}%"></div></div>
     </div>
@@ -593,18 +649,21 @@ function renderBranchCompare(arr) {
   const maxO = Math.max(...arr.map(x => x.orders), 1);
   el.innerHTML = arr.map(x => `
     <div class="branch-compare-row">
-      <div class="branch-compare-name">${x.name}</div>
+      <div class="branch-compare-name">${esc(x.name)}</div>
       <div class="branch-compare-bars">
-        <div class="branch-compare-bar-label"><span>Заходы</span><span>${x.visits}</span></div>
+        <div class="branch-compare-bar-label"><span>Заходы</span><span>${esc(x.visits)}</span></div>
         <div class="branch-compare-track"><div class="branch-compare-fill" style="width:${Math.round(x.visits/maxV*100)}%;background:#7a1128"></div></div>
-        <div class="branch-compare-bar-label"><span>Заказы</span><span>${x.orders}</span></div>
+        <div class="branch-compare-bar-label"><span>Заказы</span><span>${esc(x.orders)}</span></div>
         <div class="branch-compare-track"><div class="branch-compare-fill" style="width:${Math.round(x.orders/maxO*100)}%;background:#C77729"></div></div>
       </div>
     </div>
   `).join("");
 }
 
+let dashReq = 0;
 function loadDashboard() {
+  if (curPeriod === "custom" && !(customStartVal && customEndVal)) return;
+  const myReq = ++dashReq;
   document.getElementById("loaderBox").style.display = "block";
   document.getElementById("loaderBox").textContent = "Загрузка…";
   document.getElementById("content").style.display = "none";
@@ -612,6 +671,7 @@ function loadDashboard() {
   if (curBranch) params.branch = curBranch;
   if (curPeriod === "custom") { params.startDate = customStartVal; params.endDate = customEndVal; }
   apiGet(params, function(d) {
+    if (myReq !== dashReq || curSection !== "overview") return; // пришёл ответ на старый запрос
     if (d.status !== "success") {
       document.getElementById("loaderBox").textContent = "Не удалось загрузить";
       return;
@@ -632,13 +692,14 @@ function loadDashboard() {
     const ovBtn = document.getElementById("overviewAiBtn");
     if (ovBtn) { ovBtn.disabled = false; ovBtn.textContent = "Спросить ИИ"; }
 
+    const hasChart = typeof Chart !== "undefined";
     document.getElementById("hourNote").textContent = "Самый тихий час: " + d.weakestHour + ":00 · Самый активный: " + d.busiestHour + ":00 · Самый тихий день: " + d.weakestDay;
 
     const dailyLabels = (d.dailySeries || []).map(x => x.date.slice(5));
     const dailyVisits = (d.dailySeries || []).map(x => x.visits);
     const dailyOrders = (d.dailySeries || []).map(x => x.orders);
     if (chartDaily) chartDaily.destroy();
-    chartDaily = new Chart(document.getElementById("chartDaily"), {
+    if (hasChart) chartDaily = new Chart(document.getElementById("chartDaily"), {
       type: "line",
       data: {
         labels: dailyLabels,
@@ -652,14 +713,14 @@ function loadDashboard() {
 
     if (chartHourly) chartHourly.destroy();
     const hourColors = (d.hourlyVisits || []).map((v, i) => i === d.weakestHour ? "#ff3b30" : (i === d.busiestHour ? "#30d158" : "#7a112855"));
-    chartHourly = new Chart(document.getElementById("chartHourly"), {
+    if (hasChart) chartHourly = new Chart(document.getElementById("chartHourly"), {
       type: "bar",
       data: { labels: [...Array(24).keys()].map(h => h + ":00"), datasets: [{ data: d.hourlyVisits, backgroundColor: hourColors, borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: "#f0f0f2" } } } }
     });
 
     if (chartWeekday) chartWeekday.destroy();
-    chartWeekday = new Chart(document.getElementById("chartWeekday"), {
+    if (hasChart) chartWeekday = new Chart(document.getElementById("chartWeekday"), {
       type: "bar",
       data: { labels: d.weekdayNames, datasets: [{ data: d.weekdayVisits, backgroundColor: "#7a112880", borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: "#f0f0f2" } } } }
@@ -670,22 +731,26 @@ function loadDashboard() {
     renderList("listSources", d.sources);
     renderList("listDevices", d.devices);
   }, function() {
-    document.getElementById("loaderBox").textContent = "Нет соединения";
+    if (myReq === dashReq) document.getElementById("loaderBox").textContent = "Нет соединения";
   });
 }
 
 function initDashboard() {
+  pollTimers.forEach(clearInterval);
   pollOnline();
   pollLiveFeed();
-  setInterval(pollOnline, 5000);
-  setInterval(pollLiveFeed, 3000);
+  // опрос только пока вкладка открыта; при возврате — сразу свежие данные
+  pollTimers = [setInterval(pollOnline, 10000), setInterval(pollLiveFeed, 5000)];
   loadDashboard();
 }
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden && adminCode) { pollOnline(); pollLiveFeed(); }
+});
 
 document.addEventListener("DOMContentLoaded", function() {
   const sortIcEl = document.getElementById("sortIc-lastSeen");
   if (sortIcEl) sortIcEl.textContent = "▼";
-  if (sessionStorage.getItem("stats_authed") === "1") {
+  if (adminCode) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("dashScreen").style.display = "block";
     initDashboard();
