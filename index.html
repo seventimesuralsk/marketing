@@ -198,8 +198,10 @@
 
 <div id="loginScreen">
   <div class="logo">Seven Times</div>
-  <div class="sub">Статистика и маркетинг-аналитика<br>Введите код администратора</div>
-  <input id="loginCode" type="password" inputmode="numeric" placeholder="Код доступа" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+  <div class="sub">Статистика и маркетинг-аналитика<br>Войдите как администратор</div>
+  <input id="loginUser" type="text" placeholder="Логин" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
+  <input id="loginCode" type="password" placeholder="Пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+  <input id="loginSecret" type="password" placeholder="Секретное слово" autocomplete="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
   <div id="loginErr"></div>
   <button id="loginBtn" onclick="doLogin()">Войти</button>
 </div>
@@ -379,12 +381,13 @@ function apiGet(params, onOk, onErr, timeoutMs) {
   fetch(url, { signal: ctl.signal }).then(r => r.json()).then(d => {
     clearTimeout(t);
     // код сменили или он неверный — возвращаем на вход
-    if (d && d.status === "error" && /Нет доступа/.test(d.msg || "") && params.action !== "adminLogin") return logout("Код устарел — войдите заново");
+    if (d && d.status === "error" && /Нет доступа/.test(d.msg || "") && params.action !== "adminLogin") return logout("Вход истёк — войдите снова");
     onOk(d);
   }).catch(() => { clearTimeout(t); (onErr || (() => {}))(); });
 }
 let pollTimers = [];
 function logout(msg) {
+  if (adminCode && !msg) { try { fetch(API, { method: "POST", body: JSON.stringify({ action: "adminLogout", code: adminCode }) }); } catch (e) {} }
   sessionStorage.removeItem("stats_code"); sessionStorage.removeItem("stats_authed"); adminCode = "";
   pollTimers.forEach(clearInterval); pollTimers = [];
   document.getElementById("dashScreen").style.display = "none";
@@ -393,23 +396,31 @@ function logout(msg) {
 }
 
 function doLogin() {
-  const code = document.getElementById("loginCode").value.trim();
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginCode").value.trim();
+  const secret = document.getElementById("loginSecret").value.trim();
   const errEl = document.getElementById("loginErr");
   const btn = document.getElementById("loginBtn");
-  if (!code) { errEl.textContent = "Введите код"; return; }
+  if (!user || !pass || !secret) { errEl.textContent = "Введите логин, пароль и секретное слово"; return; }
   btn.disabled = true; btn.textContent = "Проверяем…";
-  apiGet({ action: "adminLogin", code: code }, function(d) {
+  // пароль уходит один раз и в теле запроса (не в адресе); дальше — только временный пропуск
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 20000);
+  fetch(API, { method: "POST", body: JSON.stringify({ action: "adminLogin", login: user, password: pass, secret: secret }), signal: ctl.signal })
+    .then(r => r.json()).then(function(d) {
+    clearTimeout(tm);
     btn.disabled = false; btn.textContent = "Войти";
-    if (d.status === "success") {
-      adminCode = code;
-      sessionStorage.setItem("stats_code", code);
+    document.getElementById("loginCode").value = ""; document.getElementById("loginSecret").value = "";
+    if (d.status === "success" && d.token) {
+      adminCode = d.token;
+      sessionStorage.setItem("stats_code", d.token);
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("dashScreen").style.display = "block";
       initDashboard();
     } else {
-      errEl.textContent = d.msg || "Неверный код";
+      errEl.textContent = d.msg || "Неверный логин, пароль или секретное слово";
     }
-  }, function() {
+  }).catch(function() {
+    clearTimeout(tm);
     btn.disabled = false; btn.textContent = "Войти";
     errEl.textContent = "Нет соединения";
   });
