@@ -110,6 +110,42 @@
   table.clients-table tr:hover td { background: var(--bg); }
   .client-name { font-weight: 600; }
   .client-phone { color: var(--sub); font-variant-numeric: tabular-nums; }
+  tr.cl-row { cursor: pointer; }
+  td.cl-sum { font-weight: 600; white-space: nowrap; }
+  /* ── карточка клиента ── */
+  .cc-ov { position: fixed; inset: 0; background: rgba(0,0,0,.28); z-index: 900; display: flex; justify-content: flex-end; animation: ccFade .18s ease; }
+  .cc { width: min(560px, 100%); height: 100%; background: var(--bg); overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,.12); animation: ccIn .22s cubic-bezier(.2,.8,.2,1); }
+  @keyframes ccIn { from { transform: translateX(40px); opacity: .6 } to { transform: none; opacity: 1 } }
+  @keyframes ccFade { from { opacity: 0 } to { opacity: 1 } }
+  .cc-h { position: sticky; top: 0; z-index: 2; background: rgba(245,245,247,.92); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+  .cc-ava { width: 48px; height: 48px; border-radius: 50%; background: var(--maroon); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0; }
+  .cc-h b { font-size: 1.1rem; display: block; }
+  .cc-h small { color: var(--sub); font-size: .82rem; }
+  .cc-x { margin-left: auto; width: 34px; height: 34px; border-radius: 50%; border: none; background: #e8e8ed; font-size: 1.1rem; cursor: pointer; color: var(--text); }
+  .cc-b { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .cc-act { display: flex; gap: 8px; }
+  .cc-act a { flex: 1; text-align: center; padding: 10px; border-radius: 12px; background: #fff; border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: .82rem; font-weight: 600; }
+  .cc-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .cc-tile { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+  .cc-tile b { display: block; font-size: 1.15rem; letter-spacing: -.01em; }
+  .cc-tile span { font-size: .72rem; color: var(--sub); }
+  .cc-sec { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .cc-sec h4 { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--sub); padding: 12px 14px 6px; font-weight: 600; }
+  .cc-li { padding: 10px 14px; border-top: 1px solid var(--border); font-size: .86rem; display: flex; gap: 10px; align-items: baseline; }
+  .cc-li:first-of-type { border-top: none; }
+  .cc-li .r { margin-left: auto; color: var(--sub); font-size: .78rem; white-space: nowrap; }
+  .cc-empty { padding: 10px 14px 14px; color: var(--sub); font-size: .84rem; }
+  .cc-ord { border-top: 1px solid var(--border); padding: 11px 14px; font-size: .84rem; cursor: pointer; }
+  .cc-ord .top { display: flex; gap: 8px; align-items: baseline; }
+  .cc-ord .top b { font-weight: 600; }
+  .cc-ord .top .sum { margin-left: auto; font-weight: 700; white-space: nowrap; }
+  .cc-ord .meta { color: var(--sub); font-size: .76rem; margin-top: 3px; }
+  .cc-ord .items { display: none; margin-top: 8px; padding: 8px 10px; background: var(--bg); border-radius: 10px; font-size: .8rem; line-height: 1.6; }
+  .cc-ord.open .items { display: block; }
+  .cc-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .72rem; font-weight: 600; background: #7a112812; color: var(--maroon); margin-right: 4px; }
+  .cc-tag.warn { background: #ff3b3014; color: #d70015; }
+  .cc-load { padding: 60px 20px; text-align: center; color: var(--sub); }
+  @media (max-width: 640px) { .cc { width: 100%; } .cc-tiles { grid-template-columns: repeat(2, 1fr); } }
   .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
   .pill-orders { background: #30d15818; color: #248a3d; }
   .pill-visits { background: #7a112814; color: var(--maroon); }
@@ -281,6 +317,7 @@
                 <th>Устройство</th>
                 <th class="sortable" data-key="visits" onclick="sortClients('visits')">Заходов<span class="sort-ic" id="sortIc-visits"></span></th>
                 <th class="sortable" data-key="orders" onclick="sortClients('orders')">Заказов<span class="sort-ic" id="sortIc-orders"></span></th>
+                <th class="sortable" data-key="spent" onclick="sortClients('spent')">Потратил<span class="sort-ic" id="sortIc-spent"></span></th>
                 <th class="sortable" data-key="firstSeen" onclick="sortClients('firstSeen')">Первый визит<span class="sort-ic" id="sortIc-firstSeen"></span></th>
                 <th class="sortable" data-key="lastSeen" onclick="sortClients('lastSeen')">Последний визит<span class="sort-ic" id="sortIc-lastSeen"></span></th>
               </tr>
@@ -361,7 +398,7 @@
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwTIWejtHRR1qLRG_J7LH0u8Y-678psRDlzbHVfErzN1fSANvti7TlrGpMh7tOdjygV0A/exec";
+const API = "https://script.google.com/macros/s/AKfycbzzSXN35XE_hD6xNeTDspz8LLGSAhyZT1bhHpWtB9mDJij1EkOkWZCzcgl5dXpkzbcITw/exec";
 // всё, что приходит из таблицы (имена гостей, события), вставляем только экранированным:
 // иначе гость мог записать в имя код, который выполнится в статистике
 function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -449,19 +486,20 @@ function setSection(s) {
 
 function renderClients(list) {
   const tbody = document.getElementById("clientsTbody");
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Пока нет клиентов</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:30px">Пока нет клиентов</td></tr>'; return; }
   function fmtDate(ts) {
     if (!ts) return "—";
     const d = new Date(ts);
     return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
   }
   tbody.innerHTML = list.map(c => `
-    <tr>
+    <tr class="cl-row" data-phone="${esc(c.phone)}" title="Открыть карточку клиента">
       <td class="client-name">${esc(c.name)}</td>
       <td class="client-phone">${esc(c.phone)}</td>
       <td style="color:var(--sub)">${esc(c.device || "—")}</td>
       <td><span class="pill pill-visits">${esc(c.visits)}</span></td>
       <td><span class="pill pill-orders">${esc(c.orders)}</span></td>
+      <td class="cl-sum">${c.spent ? money(c.spent) : "—"}</td>
       <td>${fmtDate(c.firstSeen)}</td>
       <td>${fmtDate(c.lastSeen)}</td>
     </tr>
@@ -496,7 +534,9 @@ function applySorting(list) {
 function filterClients() {
   const q = document.getElementById("clientSearch").value.trim().toLowerCase();
   let list = allClients;
-  if (q) list = list.filter(c => String(c.name || "").toLowerCase().includes(q) || String(c.phone || "").toLowerCase().includes(q));
+  // телефон ищем по цифрам: «8701 555», «+7 701 555», «701555» — одно и то же
+  const qd = q.replace(/\D/g, ""), qd10 = qd.length >= 4 ? qd.replace(/^[78]/, "") : qd;
+  if (q) list = list.filter(c => { const pd = String(c.phone || "").replace(/\D/g, "").slice(-10); return String(c.name || "").toLowerCase().includes(q) || String(c.phone || "").toLowerCase().includes(q) || (qd.length >= 3 && (pd.includes(qd) || pd.includes(qd10))); });
   renderClients(applySorting(list));
 }
 
@@ -541,8 +581,75 @@ function runAiAnalysis() {
   }, 120000);
 }
 
+function money(n) { return (Number(n) || 0).toLocaleString("ru-RU") + " ₸"; }
+function ccDate(ts, time) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }) + (time ? " " + d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "");
+}
+function ccAgo(ts) {
+  if (!ts) return "";
+  const days = Math.floor((Date.now() - ts) / 86400e3);
+  return days <= 0 ? "сегодня" : days === 1 ? "вчера" : days < 30 ? days + " дн. назад" : days < 365 ? Math.floor(days / 30) + " мес. назад" : Math.floor(days / 365) + " г. назад";
+}
+// ── карточка клиента: всё о нём — заказы, адреса, блюда, брони, действия
+function openClientCard(phone) {
+  closeClientCard();
+  const ov = document.createElement("div");
+  ov.className = "cc-ov"; ov.id = "ccOv";
+  ov.innerHTML = '<div class="cc" role="dialog" aria-label="Карточка клиента"><div class="cc-h"><div class="cc-ava">…</div><div><b>Загрузка…</b><small>' + esc(phone) + '</small></div><button class="cc-x" onclick="closeClientCard()" aria-label="Закрыть">✕</button></div><div class="cc-load">Собираем все заказы клиента…</div></div>';
+  ov.addEventListener("click", e => { if (e.target === ov) closeClientCard(); });
+  document.body.appendChild(ov);
+  apiGet({ action: "getClientCard", phone: phone }, function(d) {
+    if (!document.getElementById("ccOv")) return;
+    if (!d || d.status !== "success") { ov.querySelector(".cc-load").textContent = (d && d.msg) || "Не получилось загрузить"; return; }
+    renderClientCard(d);
+  }, function() { const l = ov.querySelector(".cc-load"); if (l) l.textContent = "Нет соединения — попробуйте ещё раз"; }, 40000);
+}
+document.addEventListener("click", e => { const tr = e.target.closest && e.target.closest("tr.cl-row"); if (tr) openClientCard(tr.getAttribute("data-phone")); });
+function closeClientCard() { const o = document.getElementById("ccOv"); if (o) o.remove(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeClientCard(); });
+function renderClientCard(d) {
+  const cc = document.querySelector("#ccOv .cc"); if (!cc) return;
+  const digits = String(d.phone || "").replace(/\D/g, ""), full = digits.length === 10 ? "7" + digits : digits;
+  const phoneFmt = digits.length === 10 ? "+7 " + digits.slice(0, 3) + " " + digits.slice(3, 6) + " " + digits.slice(6, 8) + " " + digits.slice(8) : d.phone;
+  const BR = b => BRANCH_NAMES[b] || b || "—";
+  const tile = (v, l) => '<div class="cc-tile"><b>' + v + "</b><span>" + l + "</span></div>";
+  const types = d.types || {};
+  let h = '<div class="cc-h"><div class="cc-ava">' + esc(String(d.name || "?").trim().charAt(0).toUpperCase()) + '</div><div><b>' + esc(d.name) + "</b><small>" + esc(phoneFmt) + (d.names && d.names.length > 1 ? " · также: " + esc(d.names.filter(n => n !== d.name).join(", ")) : "") + '</small></div><button class="cc-x" onclick="closeClientCard()" aria-label="Закрыть">✕</button></div><div class="cc-b">';
+  h += '<div class="cc-act"><a href="tel:+' + full + '">📞 Позвонить</a><a href="https://wa.me/' + full + '" target="_blank" rel="noopener">WhatsApp</a></div>';
+  h += '<div class="cc-tiles">' + tile(d.ordersCount, "заказов") + tile(money(d.spent), "потратил всего") + tile(d.avg ? money(d.avg) : "—", "средний чек") +
+    tile(d.visits, "заходов на сайт") + tile(ccDate(d.first), "первый раз") + tile(ccAgo(d.last) || "—", "последний раз") + "</div>";
+  // адреса
+  h += '<div class="cc-sec"><h4>Адреса доставки</h4>' + ((d.addresses || []).length ? d.addresses.map(a =>
+    '<div class="cc-li"><span>📍 ' + esc(a.addr) + '</span><span class="r">' + a.n + " " + (a.n === 1 ? "заказ" : a.n < 5 ? "заказа" : "заказов") + " · " + ccDate(a.last) + "</span></div>").join("") : '<div class="cc-empty">Доставок не было' + (types["Самовывоз"] ? " — забирает сам" : "") + "</div>") + "</div>";
+  // любимое
+  h += '<div class="cc-sec"><h4>Чаще всего заказывает</h4>' + ((d.top || []).length ? d.top.map(t =>
+    '<div class="cc-li"><span>' + esc(t.name) + '</span><span class="r">×' + t.qty + " · в " + t.n + " " + (t.n === 1 ? "заказе" : "заказах") + "</span></div>").join("") : '<div class="cc-empty">Пока ничего</div>') + "</div>";
+  // коротко о привычках
+  const tags = [];
+  if (types["Доставка"]) tags.push('<span class="cc-tag">Доставка ×' + types["Доставка"] + "</span>");
+  if (types["Самовывоз"]) tags.push('<span class="cc-tag">Самовывоз ×' + types["Самовывоз"] + "</span>");
+  Object.keys(d.branches || {}).forEach(b => tags.push('<span class="cc-tag">' + esc(BR(b)) + " ×" + d.branches[b] + "</span>"));
+  (d.allergies || []).forEach(a => tags.push('<span class="cc-tag warn">Аллергия: ' + esc(a) + "</span>"));
+  if (tags.length) h += '<div class="cc-sec"><h4>Привычки</h4><div style="padding:4px 14px 14px;line-height:2">' + tags.join("") + "</div></div>";
+  // все заказы
+  h += '<div class="cc-sec"><h4>Все заказы · ' + d.ordersCount + "</h4>" + ((d.orders || []).length ? d.orders.map(o =>
+    '<div class="cc-ord" onclick="this.classList.toggle(\'open\')"><div class="top"><b>' + ccDate(o.ts, 1) + "</b><span style=\"color:var(--sub);font-size:.76rem\">" + esc(o.num || "") + '</span><span class="sum">' + (o.sum ? money(o.sum) : "—") + "</span></div>" +
+    '<div class="meta">' + esc(o.type || "") + (o.type !== "Самовывоз" && o.addr ? " · " + esc(o.addr) : "") + " · " + esc(BR(o.branch)) + " · " + (o.items || []).reduce((a, i) => a + i.qty, 0) + " поз.</div>" +
+    '<div class="items">' + (o.items || []).map(i => esc(i.name) + " × " + i.qty).join("<br>") + (o.allergy && !/^нет$/i.test(o.allergy) ? '<br><span style="color:#d70015">Аллергия: ' + esc(o.allergy) + "</span>" : "") + "</div></div>").join("") : '<div class="cc-empty">Заказов ещё не было</div>') + "</div>";
+  // брони
+  h += '<div class="cc-sec"><h4>Брони столиков</h4>' + ((d.bookings || []).length ? d.bookings.map(b =>
+    '<div class="cc-li"><span>📅 ' + esc(b.date) + " " + esc(b.time) + " · " + esc(b.guests) + " гост." + (b.comment ? " · " + esc(b.comment) : "") + '</span><span class="r">' + esc(BR(b.branch)) + "</span></div>").join("") : '<div class="cc-empty">Не бронировал</div>') + "</div>";
+  // что делал на сайте
+  if ((d.events || []).length) h += '<div class="cc-sec"><h4>Последние действия на сайте</h4>' + d.events.slice(0, 20).map(ev =>
+    '<div class="cc-li"><span>' + esc(ev.type) + (ev.det ? ' <span style="color:var(--sub)">· ' + esc(ev.det.slice(0, 70)) + "</span>" : "") + '</span><span class="r">' + ccDate(ev.ts, 1) + "</span></div>").join("") + "</div>";
+  h += "</div>";
+  cc.innerHTML = h;
+}
+
 function loadClients() {
-  document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Загрузка…</td></tr>';
+  document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:30px">Загрузка…</td></tr>';
   const params = { action: "getClientsList" };
   if (curBranch) params.branch = curBranch;
   const reqBranch = curBranch;
@@ -552,7 +659,7 @@ function loadClients() {
     allClients._loaded = true;
     filterClients();
   }, function() {
-    document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:30px">Нет соединения</td></tr>';
+    document.getElementById("clientsTbody").innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:30px">Нет соединения</td></tr>';
   });
 }
 
